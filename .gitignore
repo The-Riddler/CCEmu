@@ -1,0 +1,3 @@
+#exclude lua 5.1 shell
+.lua5.1.exe
+.lua5.1.dll
