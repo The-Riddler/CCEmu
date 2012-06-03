@@ -29,6 +29,7 @@ local dir = ""
 local autoclose = true
 local pcid = nil
 local headless = false
+local verboseRun = false
 
 --Variables we want visible all over the script
 local osname = ""
@@ -52,27 +53,8 @@ while next(targs) do
         pcid = table.remove(targs, 1)
     elseif v == "-h" then
         headless = true
-    elseif v == "-dev" then --broken
-        print("--------------------------------")
-        print("Starting in dev environment mode")
-        print("--------------------------------")
-        os.execute("start cmd /k lua5.1.exe "..dir.."/"..currentfile.." -dir "..dir.." "..table.concat(targs, " ").." -initmsg ".. "2> errlog.log")
-        
-        print("This is the error terminal, error messages will be displayed here")
-        
-        local pos = 0
-        local str = ""
-        repeat
-            local fh = io.open("errlog.log", "r")
-            if fh ~= nil then
-                fh.seek("set", pos)
-                str = fh.read("l")
-                if str ~= nil and str ~= "" then
-                    pos = pos + string.len(str)
-                    io.write(str)
-                end
-            end
-        until str == "EXIT"
+    elseif v == "-vr" then
+        verboseRun = true
     end
 end
 
@@ -128,12 +110,12 @@ statusDone(tostring(getTempFile))
 
 --load fslib
 status("Loading fslib")
-    local fslib = assert(loadfile(dir.."lib/fslib.lua"))(dir.."/pc/hdd", getTempFile)
+    local fslib = assert(loadfile(dir.."lib/fslib.lua"))(dir.."pc/hdd", getTempFile, osname)
 statusDone(tostring(fslib))
 
 --Load vmlib
 status("Loading vmlib")
-    local vmlib = assert(loadfile(dir.."lib/vm.lua"))(fslib, getTempFile)
+    local vmlib = assert(loadfile(dir.."lib/vm.lua"))(fslib, getTempFile, verboseRun)
 statusDone(tostring(vmlib))
 
 --Spawn the first pc

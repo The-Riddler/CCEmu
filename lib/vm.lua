@@ -19,7 +19,7 @@ Copyright (C) 2012  Jordan (Riddler)
 
 local vmlib = {}
 local pclist = {}
-local fslib, getTmpFile = ...
+local fslib, getTmpFile, verboseRun = ...
 
 vmlib["status"] = {
     ["LOAD_ERROR"] = 1,
@@ -40,6 +40,9 @@ local pcenv = {
         ["match"] = string.match,
         ["sub"] = string.sub,
         ["rep"] = string.rep
+    },
+    ["fs"] = {
+        ["list"] = fslib.list,
     },
     ["os"] = {},
     ["peripheral"] = {},
@@ -106,22 +109,30 @@ function vmlib.tick()
         local file = {}
         local filename = ""
         
-        debug.sethook(co, function(hook, linenum)
-            local info = debug.getinfo(2, "nS")
-            if filename ~= info.source then
-            local srcfile = string.sub(info.source, 2, string.len(info.source))
-                local fh = io.open(srcfile, "r")
-                if fh ~= nil then
-                    for line in fh:lines() do
-                        table.insert(file, line)
+        if verboseRun then
+            debug.sethook(co, function(hook, linenum)
+                local info = debug.getinfo(2, "nS")
+                if filename ~= info.source then
+                    file = {}
+                    local srcfile = string.sub(info.source, 2, string.len(info.source))
+                    local fh = io.open(srcfile, "r")
+                    if fh ~= nil then
+                        for line in fh:lines() do
+                            table.insert(file, line)
+                        end
+                    
+                        fh:close()
+                    else
+                        print("DEBUG WARNING: failed to load file")
                     end
                 end
-                fh:close()
-            end
-            filename = info.source
-            
-            print(info.short_src, linenum, file[linenum] )
-        end, "l")
+                filename = info.source
+                
+                print(info.short_src, linenum, file[linenum] )
+            end, "l")
+        end
+        
+        fslib.setDrive(v["id"])
         
         print("PC TICK: ",coroutine.resume(co))
     end
