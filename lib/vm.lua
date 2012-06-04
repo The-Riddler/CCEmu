@@ -19,7 +19,7 @@ Copyright (C) 2012  Jordan (Riddler)
 
 local vmlib = {}
 local pclist = {}
-local fslib, getTmpFile, verboseRun = ...
+local fslib, getTmpFile, verboseRun, verboseLib, debuglib = ...
 
 vmlib["status"] = {
     ["LOAD_ERROR"] = 1,
@@ -43,18 +43,25 @@ local pcenv = {
     },
     ["fs"] = {
         ["list"] = fslib.list,
+        ["combine"] = fslib.combine,
+        ["isDir"] = fslib.isDir,
+        ["getName"] = fslib.getName,
+        ["open"] = fslib.open
     },
     ["os"] = {},
     ["peripheral"] = {},
     ["type"] = type,
-    ["loadstring"] = loadstring,
+    ["loadstring"] = debuglib.loadstring or  loadstring,
     ["getmetatable"] = getmetatable,
     ["setmetatable"] = setmetatable,
     ["tostring"] = tostring,
     ["ipairs"] = ipairs,
     ["pairs"] = pairs,
     ["write"] = function(...) coroutine.yield("write", unpack({...})) end,
-    ["error"] = error
+    ["error"] = error,
+    ["setfenv"] = setfenv,
+    ["getfenv"] = getfenv,
+    ["rawset"] = rawset
 }
 pcenv["_G"] = pcenv
 
@@ -109,27 +116,14 @@ function vmlib.tick()
         local file = {}
         local filename = ""
         
-        if verboseRun then
+        if debuglib then
             debug.sethook(co, function(hook, linenum)
-                local info = debug.getinfo(2, "nS")
-                if filename ~= info.source then
-                    file = {}
-                    local srcfile = string.sub(info.source, 2, string.len(info.source))
-                    local fh = io.open(srcfile, "r")
-                    if fh ~= nil then
-                        for line in fh:lines() do
-                            table.insert(file, line)
-                        end
-                    
-                        fh:close()
-                    else
-                        print("DEBUG WARNING: failed to load file")
-                    end
-                end
-                filename = info.source
+                debuglib.hook(hook, linenum)
+                local source = debuglib.getShortSrc()
                 
-                print(info.short_src, linenum, file[linenum] )
-            end, "l")
+                if (verboseLib == false and string.find(source, "lib/") == 1) or source == "lib/debug.lua" then return end
+                print(source, debuglib.getLineNum(), debuglib.getLineCode())
+            end , "l")
         end
         
         fslib.setDrive(v["id"])

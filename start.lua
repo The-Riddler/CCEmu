@@ -30,6 +30,7 @@ local autoclose = true
 local pcid = nil
 local headless = false
 local verboseRun = false
+local verboseLib = false
 
 --Variables we want visible all over the script
 local osname = ""
@@ -55,6 +56,8 @@ while next(targs) do
         headless = true
     elseif v == "-vr" then
         verboseRun = true
+    elseif v == "-vl" then
+        verboseLib = true
     end
 end
 
@@ -66,6 +69,8 @@ print("Default size: ", defaultsize)
 print("dir:         ", dir)
 print("autoclose:    ", autoclose)
 print("pcid          ", pcid)
+print("verbose run   ", verboseRun)
+print("verbose lib    ", verboseLib)
 print("headless      ", headless)
 
 --Load status display if nessesary
@@ -110,12 +115,19 @@ statusDone(tostring(getTempFile))
 
 --load fslib
 status("Loading fslib")
-    local fslib = assert(loadfile(dir.."lib/fslib.lua"))(dir.."pc/hdd", getTempFile, osname)
+    local fslib = assert(loadfile(dir.."lib/fslib.lua"))(dir.."pc", getTempFile, osname)
 statusDone(tostring(fslib))
+
+local debuglib = nil
+if verboseRun or verboseLib then
+    status("Loading debuglib")
+        debuglib = assert(loadfile(dir.."lib/debug.lua"))()
+    statusDone(tostring(debuglib))
+end
 
 --Load vmlib
 status("Loading vmlib")
-    local vmlib = assert(loadfile(dir.."lib/vm.lua"))(fslib, getTempFile, verboseRun)
+    local vmlib = assert(loadfile(dir.."lib/vm.lua"))(fslib, getTempFile, verboseRun, verboseLib, debuglib)
 statusDone(tostring(vmlib))
 
 --Spawn the first pc
@@ -131,7 +143,7 @@ if headless == false then--Spawn I/O terminal
     
     local input, output = vmlib.getIOFiles(pcid)
     status("Spawning output terminal")
-        assert(spawnTerm(osname, autoclose, dir.."output.lua", output), "Error spawning terminal")
+        assert(spawnTerm(osname, autoclose, dir.."outputterm.lua", output), "Error spawning terminal")
     statusDone("done")
 
     status("Spawning input terminal")
