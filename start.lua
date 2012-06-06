@@ -24,7 +24,7 @@ local currentfile = "iotest.lua"
 
 --Argument variables
 local prettyprint = false
-local defaultsize = false
+local size = {80, 25}
 local dir = ""
 local autoclose = true
 local pcid = nil
@@ -40,9 +40,9 @@ while next(targs) do
     local v = table.remove(targs, 1)
     if v == "-p" then
         prettyprint = true
-    elseif v == "-pd" then
-        prettyprint = true
-        defaultsize = true
+    elseif v == "-size" then
+        size[1] = tonumber(table.remove(targs, 1))
+        size[2] = tonumber(table.remove(targs, 1))
     elseif v == "-dir" then
         dir = table.remove(targs, 1)
         if dir == nil then error("-dir needs an argument") end
@@ -77,17 +77,7 @@ print("headless      ", headless)
 local status = function(arg) io.write(arg, ": ") end
 local statusDone = print
 if prettyprint == true then
-    local width, height
-    if defaultsize == false then
-        io.write("Please enter width of terminal: ")
-        width = tonumber(io.read())
-        io.write("Please enter height of terminal: ")
-        height = tonumber(io.read())
-    else
-        width, height = 80, 25
-    end
-    
-    status, statusDone = assert(loadfile(dir.."lib/statusdisplay.lua"))(width, height)
+    status, statusDone = assert(loadfile(dir.."lib/statusdisplay.lua"))(size[1], size[2])
 end
 
 --[[-----------------------------------------
@@ -143,11 +133,11 @@ if headless == false then--Spawn I/O terminal
     
     local input, output = vmlib.getIOFiles(pcid)
     status("Spawning output terminal")
-        assert(spawnTerm(osname, autoclose, dir.."outputterm.lua", output), "Error spawning terminal")
+        assert(spawnTerm(osname, autoclose, dir.."outputterm.lua", size, output), "Error spawning terminal")
     statusDone("done")
 
     status("Spawning input terminal")
-        assert(spawnTerm(osname, autoclose, dir.."inputterm.lua", input), "Error spawning terminal")
+        assert(spawnTerm(osname, autoclose, dir.."inputterm.lua", size, input), "Error spawning terminal")
     statusDone("done")
 end
 

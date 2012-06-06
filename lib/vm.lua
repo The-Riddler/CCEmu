@@ -51,7 +51,6 @@ local pcenv = {
     ["os"] = {},
     ["peripheral"] = {},
     ["type"] = type,
-    ["loadstring"] = debuglib.loadstring or  loadstring,
     ["getmetatable"] = getmetatable,
     ["setmetatable"] = setmetatable,
     ["tostring"] = tostring,
@@ -64,7 +63,12 @@ local pcenv = {
     ["rawset"] = rawset
 }
 pcenv["_G"] = pcenv
-
+if debuglib then
+    pcenv["loadstring"] = debuglib.loadstring
+else
+    pcenv["loadstring"] = loadstring
+end
+    
 local function getPCData(id)
     for k, v in pairs(pclist) do
         if v["id"] == id then
